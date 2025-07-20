@@ -102,6 +102,7 @@ router.post('/login', [
     }
 
     // Generate JWT token
+    console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'EXISTS' : 'MISSING');
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,

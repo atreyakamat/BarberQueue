@@ -71,9 +71,12 @@ export const bookingsAPI = {
   createBooking: (data) => api.post('/bookings', data),
   getMyBookings: (params = {}) => api.get('/bookings/my-bookings', { params }),
   getBarberBookings: (params = {}) => api.get('/bookings/barber-bookings', { params }),
+  getBooking: (id) => api.get(`/bookings/${id}`),
   getBookingDetails: (id) => api.get(`/bookings/${id}`),
   updateBookingStatus: (id, status) => api.put(`/bookings/${id}/status`, { status }),
   cancelBooking: (id) => api.put(`/bookings/${id}/cancel`),
+  rescheduleBooking: (id, data) => api.put(`/bookings/${id}/reschedule`, data),
+  getAvailableSlots: (params) => api.get('/bookings/available-slots', { params }),
   addReview: (id, data) => api.put(`/bookings/${id}/review`, data),
 };
 

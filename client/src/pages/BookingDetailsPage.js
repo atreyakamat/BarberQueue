@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
-import { toast } from 'react-hot-toast';
+import { bookingsAPI } from '../services/api';
+import toast from 'react-hot-toast';
 import { formatDate, formatTime } from '../utils';
 
 const BookingDetailsPage = () => {
@@ -28,7 +28,7 @@ const BookingDetailsPage = () => {
 
   const fetchBookingDetails = async () => {
     try {
-      const response = await api.get(`/bookings/${bookingId}`);
+      const response = await bookingsAPI.getBooking(bookingId);
       setBooking(response.data);
     } catch (error) {
       toast.error('Error fetching booking details');
@@ -40,12 +40,10 @@ const BookingDetailsPage = () => {
 
   const fetchAvailableSlots = async (date) => {
     try {
-      const response = await api.get('/bookings/available-slots', {
-        params: {
-          barberId: booking.barber._id,
-          date: date,
-          serviceId: booking.service._id
-        }
+      const response = await bookingsAPI.getAvailableSlots({
+        barberId: booking.barber._id,
+        date: date,
+        serviceId: booking.service._id
       });
       setAvailableSlots(response.data);
     } catch (error) {
@@ -60,7 +58,7 @@ const BookingDetailsPage = () => {
 
     setActionLoading(true);
     try {
-      await api.put(`/bookings/${bookingId}/cancel`);
+      await bookingsAPI.cancelBooking(bookingId);
       toast.success('Booking cancelled successfully');
       setBooking(prev => ({ ...prev, status: 'cancelled' }));
     } catch (error) {
@@ -80,7 +78,7 @@ const BookingDetailsPage = () => {
 
     setActionLoading(true);
     try {
-      const response = await api.put(`/bookings/${bookingId}/reschedule`, rescheduleData);
+      const response = await bookingsAPI.rescheduleBooking(bookingId, rescheduleData);
       toast.success('Booking rescheduled successfully');
       setBooking(response.data);
       setShowReschedule(false);

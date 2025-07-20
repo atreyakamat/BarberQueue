@@ -18,14 +18,14 @@ echo ✅ MongoDB is running
 
 REM Start the backend server
 echo 🔧 Starting backend server...
-start "BarberQueue Backend" cmd /k "cd /d c:\Projects\BarberQueue\server && npm start"
+start "BarberQueue Backend" "start-backend.bat"
 
 REM Wait a moment for server to start
 timeout /t 3 /nobreak >nul
 
 REM Start the frontend client
 echo 🎨 Starting frontend client...
-start "BarberQueue Frontend" cmd /k "cd /d c:\Projects\BarberQueue\client && npm start"
+start "BarberQueue Frontend" "start-frontend.bat"
 
 echo.
 echo ✅ BarberQueue is starting up!

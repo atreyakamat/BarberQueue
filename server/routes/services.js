@@ -10,7 +10,7 @@ router.get('/barber/:barberId', async (req, res) => {
   try {
     const { barberId } = req.params;
     const services = await Service.find({ 
-      barberId, 
+      barberId: barberId, 
       isActive: true 
     }).sort({ category: 1, name: 1 });
 

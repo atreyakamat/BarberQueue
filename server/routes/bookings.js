@@ -367,4 +367,118 @@ router.put('/:id/review', auth, authorize('customer'), [
   }
 });
 
+// Get available time slots for a barber on a specific date
+router.get('/available-slots', async (req, res) => {
+  try {
+    const { barberId, date, serviceId } = req.query;
+
+    if (!barberId || !date) {
+      return res.status(400).json({ message: 'Barber ID and date are required' });
+    }
+
+    // Get service details if provided
+    let serviceDuration = 60; // Default 60 minutes
+    if (serviceId) {
+      const service = await Service.findById(serviceId);
+      if (service) {
+        serviceDuration = service.duration;
+      }
+    }
+
+    // Get existing bookings for the date
+    const startOfDay = new Date(date);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingBookings = await Booking.find({
+      barber: barberId,
+      scheduledTime: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      },
+      status: { $in: ['confirmed', 'in-progress'] }
+    }).sort({ scheduledTime: 1 });
+
+    // Generate available slots (9 AM to 8 PM, every 30 minutes)
+    const slots = [];
+    const workingHours = { start: 9, end: 20 }; // 9 AM to 8 PM
+    const slotInterval = 30; // 30 minutes
+
+    for (let hour = workingHours.start; hour < workingHours.end; hour++) {
+      for (let minutes = 0; minutes < 60; minutes += slotInterval) {
+        const slotTime = new Date(date);
+        slotTime.setHours(hour, minutes, 0, 0);
+        
+        // Skip past times
+        if (slotTime <= new Date()) continue;
+
+        // Check if slot conflicts with existing bookings
+        const slotEndTime = new Date(slotTime.getTime() + serviceDuration * 60000);
+        
+        const hasConflict = existingBookings.some(booking => {
+          const bookingStart = new Date(booking.scheduledTime);
+          const bookingEnd = new Date(bookingStart.getTime() + booking.totalDuration * 60000);
+          
+          return (slotTime < bookingEnd && slotEndTime > bookingStart);
+        });
+
+        if (!hasConflict) {
+          slots.push({
+            time: slotTime.toISOString(),
+            displayTime: slotTime.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: true 
+            }),
+            available: true
+          });
+        }
+      }
+    }
+
+    res.json({ slots });
+  } catch (error) {
+    console.error('Get available slots error:', error);
+    res.status(500).json({ message: 'Server error fetching available slots' });
+  }
+});
+
+// Get barber availability status
+router.get('/barber-status/:barberId', async (req, res) => {
+  try {
+    const { barberId } = req.params;
+    
+    // Get current queue status
+    const currentQueue = await Queue.findOne({ barber: barberId })
+      .populate('queue.booking');
+    
+    // Get current booking if any
+    const now = new Date();
+    const currentBooking = await Booking.findOne({
+      barber: barberId,
+      scheduledTime: { $lte: now },
+      status: 'in-progress'
+    }).populate('customer', 'name');
+
+    const status = {
+      isAvailable: !currentBooking,
+      currentCustomer: currentBooking ? currentBooking.customer.name : null,
+      queueLength: currentQueue ? currentQueue.queue.length : 0,
+      estimatedWaitTime: currentQueue ? currentQueue.queue.length * 30 : 0, // 30 min average
+      nextAvailableSlot: null
+    };
+
+    // Calculate next available slot
+    if (!status.isAvailable) {
+      const nextSlot = new Date(now.getTime() + status.estimatedWaitTime * 60000);
+      status.nextAvailableSlot = nextSlot.toISOString();
+    }
+
+    res.json(status);
+  } catch (error) {
+    console.error('Get barber status error:', error);
+    res.status(500).json({ message: 'Server error fetching barber status' });
+  }
+});
+
 module.exports = router;
