@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { api } from '../services/api';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { formatDate, formatTime } from '../utils';
 
 const BarberBookings = () => {

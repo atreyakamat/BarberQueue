@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { api } from '../services/api';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { formatTime, formatDate } from '../utils';
 
 const QueuePage = () => {

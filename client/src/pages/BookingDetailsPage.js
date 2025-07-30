@@ -43,7 +43,7 @@ const BookingDetailsPage = () => {
       const response = await bookingsAPI.getAvailableSlots({
         barberId: booking.barber._id,
         date: date,
-        serviceId: booking.service._id
+        serviceIds: booking.services.map(s => s.service._id)
       });
       setAvailableSlots(response.data);
     } catch (error) {

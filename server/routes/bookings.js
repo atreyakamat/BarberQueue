@@ -314,6 +314,83 @@ router.put('/:id/cancel', auth, authorize('customer'), async (req, res) => {
   }
 });
 
+// Reschedule booking (customer only)
+router.put('/:id/reschedule', auth, authorize('customer'), [
+  body('date').isISO8601().withMessage('Invalid date format'),
+  body('time').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Invalid time format')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const booking = await Booking.findById(req.params.id)
+      .populate('barber', 'name shopName')
+      .populate('services.service', 'name price duration');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    // Check if user owns this booking
+    if (booking.customer.toString() !== req.user.userId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Check if booking can be rescheduled
+    if (booking.status === 'completed' || booking.status === 'cancelled') {
+      return res.status(400).json({ message: 'Cannot reschedule this booking' });
+    }
+
+    const { date, time } = req.body;
+    
+    // Create new scheduled time
+    const newScheduledTime = new Date(`${date}T${time}`);
+    
+    // Check if new time is in the future
+    if (newScheduledTime <= new Date()) {
+      return res.status(400).json({ message: 'Scheduled time must be in the future' });
+    }
+
+    // Check for conflicts with existing bookings
+    const conflictingBooking = await Booking.findOne({
+      barber: booking.barber,
+      scheduledTime: {
+        $gte: newScheduledTime,
+        $lt: new Date(newScheduledTime.getTime() + booking.totalDuration * 60000)
+      },
+      status: { $in: ['confirmed', 'in-progress'] },
+      _id: { $ne: booking._id }
+    });
+
+    if (conflictingBooking) {
+      return res.status(400).json({ message: 'Time slot is already booked' });
+    }
+
+    // Update booking
+    booking.scheduledTime = newScheduledTime;
+    booking.status = 'confirmed';
+    booking.updatedAt = new Date();
+    
+    await booking.save();
+
+    // Populate the updated booking
+    const updatedBooking = await Booking.findById(booking._id)
+      .populate('barber', 'name shopName phone')
+      .populate('services.service', 'name price duration category')
+      .populate('customer', 'name phone');
+
+    res.json({
+      message: 'Booking rescheduled successfully',
+      booking: updatedBooking
+    });
+  } catch (error) {
+    console.error('Reschedule booking error:', error);
+    res.status(500).json({ message: 'Server error rescheduling booking' });
+  }
+});
+
 // Add rating and review (customer only)
 router.put('/:id/review', auth, authorize('customer'), [
   body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),

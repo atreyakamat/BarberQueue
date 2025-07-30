@@ -50,6 +50,7 @@ export const authAPI = {
 export const usersAPI = {
   getBarbers: (params = {}) => api.get('/users/barbers', { params }),
   getBarberDetails: (id) => api.get(`/users/barber/${id}`),
+  getUserById: (id) => api.get(`/users/${id}`),
   getBarberSlots: (id, date) => api.get(`/users/barber/${id}/slots`, { params: { date } }),
   search: (params = {}) => api.get('/users/search', { params }),
   getDashboard: () => api.get('/users/dashboard'),
@@ -77,7 +78,10 @@ export const bookingsAPI = {
   cancelBooking: (id) => api.put(`/bookings/${id}/cancel`),
   rescheduleBooking: (id, data) => api.put(`/bookings/${id}/reschedule`, data),
   getAvailableSlots: (params) => api.get('/bookings/available-slots', { params }),
+  getBarberStatus: (barberId) => api.get(`/bookings/barber-status/${barberId}`),
   addReview: (id, data) => api.put(`/bookings/${id}/review`, data),
+  getStats: () => api.get('/bookings/stats'),
+  getTodayBookings: () => api.get('/bookings/today'),
 };
 
 // Queue API
@@ -88,6 +92,8 @@ export const queueAPI = {
   updateQueueStatus: (bookingId, status) => api.put(`/queue/update/${bookingId}`, { status }),
   removeFromQueue: (bookingId) => api.delete(`/queue/remove/${bookingId}`),
   getQueueStats: (barberId) => api.get(`/queue/stats/${barberId}`),
+  getMyQueue: () => api.get('/queue/my-queue'),
+  callNextCustomer: (queueId) => api.post(`/queue/${queueId}/next`),
 };
 
 export default api;

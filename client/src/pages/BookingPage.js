@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
-import { api } from '../services/api';
-import { toast } from 'react-hot-toast';
+import { usersAPI, servicesAPI, bookingsAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const BookingPage = () => {
   const { barberId } = useParams();
@@ -55,7 +55,7 @@ const BookingPage = () => {
 
   const fetchBarberDetails = async () => {
     try {
-      const response = await api.get(`/users/${barberId}`);
+      const response = await usersAPI.getUserById(barberId);
       setBarber(response.data);
     } catch (error) {
       toast.error('Error fetching barber details');
@@ -64,7 +64,7 @@ const BookingPage = () => {
 
   const fetchServices = async () => {
     try {
-      const response = await api.get(`/services/barber/${barberId}`);
+      const response = await servicesAPI.getBarberServices(barberId);
       setServices(response.data.services);
     } catch (error) {
       toast.error('Error fetching services');
@@ -73,7 +73,7 @@ const BookingPage = () => {
 
   const fetchBarberStatus = async () => {
     try {
-      const response = await api.get(`/bookings/barber-status/${barberId}`);
+      const response = await bookingsAPI.getBarberStatus(barberId);
       setBarberStatus(response.data);
     } catch (error) {
       console.error('Error fetching barber status:', error);
@@ -83,12 +83,10 @@ const BookingPage = () => {
   const fetchAvailableSlots = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/bookings/available-slots`, {
-        params: {
-          barberId,
-          date: selectedDate,
-          serviceIds: selectedServices.join(',')
-        }
+      const response = await bookingsAPI.getAvailableSlots({
+        barberId,
+        date: selectedDate,
+        serviceIds: selectedServices.join(',')
       });
       setAvailableSlots(response.data.slots || []);
     } catch (error) {
@@ -131,7 +129,7 @@ const BookingPage = () => {
         scheduledTime: selectedTime
       };
 
-      const response = await api.post('/bookings', bookingData);
+      const response = await bookingsAPI.createBooking(bookingData);
       
       // Emit socket event for real-time updates
       if (socket) {

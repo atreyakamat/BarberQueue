@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
-import { api } from '../services/api';
-import { toast } from 'react-hot-toast';
+import { bookingsAPI, usersAPI } from '../services/api';
+import toast from 'react-hot-toast';
 import { formatDate, formatTime } from '../utils';
 import BarberDashboard from './BarberDashboard';
 
@@ -56,8 +56,8 @@ const CustomerDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const [bookingsResponse, barbersResponse] = await Promise.all([
-        api.get('/bookings/my-bookings'),
-        api.get('/users/barbers')
+        bookingsAPI.getMyBookings(),
+        usersAPI.getBarbers()
       ]);
 
       setRecentBookings(bookingsResponse.data.slice(0, 5));
@@ -67,7 +67,7 @@ const CustomerDashboard = () => {
       const bookings = bookingsResponse.data;
       setStats({
         totalBookings: bookings.length,
-        upcomingBookings: bookings.filter(b => b.status === 'confirmed' && new Date(`${b.date}T${b.time}`) > new Date()).length,
+        upcomingBookings: bookings.filter(b => b.status === 'confirmed' && new Date(b.scheduledTime) > new Date()).length,
         completedBookings: bookings.filter(b => b.status === 'completed').length,
         cancelledBookings: bookings.filter(b => b.status === 'cancelled').length
       });

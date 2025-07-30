@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
-import { api } from '../services/api';
-import { toast } from 'react-hot-toast';
+import { authAPI, bookingsAPI, usersAPI, servicesAPI, queueAPI } from '../services/api';
+import toast from 'react-hot-toast';
 import { formatDate, formatTime } from '../utils';
 
 const BarberDashboard = () => {
@@ -46,9 +46,9 @@ const BarberDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const [statsResponse, bookingsResponse, queueResponse] = await Promise.all([
-        api.get('/bookings/stats'),
-        api.get('/bookings/today'),
-        api.get('/queue/my-queue')
+        bookingsAPI.getStats(),
+        bookingsAPI.getTodayBookings(),
+        queueAPI.getMyQueue()
       ]);
 
       setStats(statsResponse.data);
@@ -63,7 +63,7 @@ const BarberDashboard = () => {
 
   const fetchUserAvailability = async () => {
     try {
-      const response = await api.get('/auth/profile');
+      const response = await authAPI.getProfile();
       setIsAvailable(response.data.isAvailable);
     } catch (error) {
       console.error('Error fetching availability');
@@ -84,9 +84,7 @@ const BarberDashboard = () => {
 
   const toggleAvailability = async () => {
     try {
-      const response = await api.put('/auth/availability', {
-        isAvailable: !isAvailable
-      });
+      const response = await authAPI.toggleAvailability();
       setIsAvailable(response.data.isAvailable);
       toast.success(`You are now ${response.data.isAvailable ? 'available' : 'unavailable'}`);
     } catch (error) {
@@ -96,7 +94,7 @@ const BarberDashboard = () => {
 
   const updateBookingStatus = async (bookingId, status) => {
     try {
-      await api.put(`/bookings/${bookingId}/status`, { status });
+      await bookingsAPI.updateBookingStatus(bookingId, status);
       toast.success('Booking updated successfully');
       fetchDashboardData();
     } catch (error) {
@@ -111,7 +109,7 @@ const BarberDashboard = () => {
     }
 
     try {
-      await api.post(`/queue/${currentQueue._id}/next`);
+      await queueAPI.callNextCustomer(currentQueue._id);
       
       if (socket) {
         socket.emit('queue:next-customer', currentQueue._id);

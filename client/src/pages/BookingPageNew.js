@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { api } from '../services/api';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const BookingPage = () => {
   const { barberId } = useParams();
