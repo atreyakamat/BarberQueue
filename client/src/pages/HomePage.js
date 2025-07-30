@@ -1,4 +1,4 @@
-import React from 'react';
+// ...existing code...
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -8,8 +8,6 @@ import {
   Star,
   CheckCircle,
   ArrowRight,
-  Scissors,
-  Smartphone,
   Bell,
   MapPin
 } from 'lucide-react';

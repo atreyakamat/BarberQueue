@@ -255,6 +255,10 @@ router.get('/dashboard', auth, async (req, res) => {
   try {
     const userId = req.user.userId;
     const userRole = req.user.role;
+    
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
     if (userRole === 'customer') {
       // Customer dashboard
@@ -297,10 +301,6 @@ router.get('/dashboard', auth, async (req, res) => {
       });
     } else if (userRole === 'barber') {
       // Barber dashboard
-      const today = new Date();
-      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-
       const todayBookings = await Booking.find({
         barber: userId,
         scheduledTime: { $gte: startOfDay, $lt: endOfDay }
@@ -341,6 +341,30 @@ router.get('/dashboard', auth, async (req, res) => {
             .filter(b => b.status === 'completed')
             .reduce((sum, b) => sum + b.totalAmount, 0)
         }
+      });
+    } else {
+      // Admin or other role dashboard
+      const totalUsers = await User.countDocuments();
+      const totalBarbers = await User.countDocuments({ role: 'barber' });
+      const totalCustomers = await User.countDocuments({ role: 'customer' });
+      const totalBookings = await Booking.countDocuments();
+      const todayBookings = await Booking.countDocuments({
+        createdAt: { $gte: startOfDay, $lt: endOfDay }
+      });
+
+      res.json({
+        stats: {
+          totalUsers,
+          totalBarbers,
+          totalCustomers,
+          totalBookings,
+          todayBookings
+        },
+        recentBookings: await Booking.find()
+          .populate('customer', 'name phone')
+          .populate('barber', 'name shopName')
+          .sort({ createdAt: -1 })
+          .limit(10)
       });
     }
   } catch (error) {

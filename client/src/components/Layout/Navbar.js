@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
@@ -20,7 +20,7 @@ import {
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { user, logout, isAuthenticated, isBarber, isCustomer } = useAuth();
+  const { user, logout, isAuthenticated, isBarber } = useAuth();
   const { connected } = useSocket();
   const location = useLocation();
   const navigate = useNavigate();

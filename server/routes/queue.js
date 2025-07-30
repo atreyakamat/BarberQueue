@@ -6,6 +6,55 @@ const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Get my queue (for barbers) - Must come before /:barberId route
+router.get('/my-queue', auth, authorize('barber'), async (req, res) => {
+  try {
+    const barberId = req.user.userId;
+    
+    let queue = await Queue.findOne({ barber: barberId })
+      .populate({
+        path: 'queue.booking',
+        populate: [
+          { path: 'customer', select: 'name phone' },
+          { path: 'services.service', select: 'name duration price' }
+        ]
+      })
+      .populate({
+        path: 'currentlyServing',
+        populate: [
+          { path: 'customer', select: 'name phone' },
+          { path: 'services.service', select: 'name duration price' }
+        ]
+      });
+
+    if (!queue) {
+      queue = new Queue({ barber: barberId });
+      await queue.save();
+    }
+
+    // Reset daily stats if needed
+    queue.resetDailyStats();
+
+    // Filter active queue items
+    const activeQueue = queue.queue.filter(item => 
+      ['waiting', 'notified', 'in-progress'].includes(item.status)
+    );
+
+    res.json({
+      _id: queue._id,
+      queue: activeQueue,
+      currentlyServing: queue.currentlyServing,
+      totalServedToday: queue.totalServedToday,
+      averageServiceTime: queue.averageServiceTime,
+      estimatedWaitTime: activeQueue.length * queue.averageServiceTime,
+      queueLength: activeQueue.length
+    });
+  } catch (error) {
+    console.error('Get my queue error:', error);
+    res.status(500).json({ message: 'Server error fetching my queue' });
+  }
+});
+
 // Get queue for a barber
 router.get('/:barberId', async (req, res) => {
   try {
@@ -395,6 +444,69 @@ router.get('/stats/:barberId', auth, authorize('barber'), async (req, res) => {
   } catch (error) {
     console.error('Get queue stats error:', error);
     res.status(500).json({ message: 'Server error fetching queue statistics' });
+  }
+});
+
+// Call next customer (for barbers)
+router.post('/:queueId/next', auth, authorize('barber'), async (req, res) => {
+  try {
+    const { queueId } = req.params;
+    const barberId = req.user.userId;
+    
+    const queue = await Queue.findById(queueId)
+      .populate({
+        path: 'queue.booking',
+        populate: [
+          { path: 'customer', select: 'name phone' },
+          { path: 'services.service', select: 'name duration price' }
+        ]
+      });
+    
+    if (!queue || queue.barber.toString() !== barberId) {
+      return res.status(404).json({ message: 'Queue not found or unauthorized' });
+    }
+    
+    // Find the next waiting customer
+    const nextCustomer = queue.queue.find(item => item.status === 'waiting');
+    
+    if (!nextCustomer) {
+      return res.status(400).json({ message: 'No customers waiting in queue' });
+    }
+    
+    // Update the current customer to in-progress
+    nextCustomer.status = 'notified';
+    nextCustomer.notifiedAt = new Date();
+    
+    // If there was someone currently being served, mark them as completed
+    if (queue.currentlyServing) {
+      const currentBooking = await Booking.findById(queue.currentlyServing);
+      if (currentBooking && currentBooking.status === 'in-progress') {
+        currentBooking.status = 'completed';
+        await currentBooking.save();
+      }
+      queue.totalServedToday += 1;
+    }
+    
+    // Set the new customer as currently serving
+    queue.currentlyServing = nextCustomer.booking;
+    
+    await queue.save();
+    
+    // Update the booking status
+    const booking = await Booking.findById(nextCustomer.booking);
+    if (booking) {
+      booking.status = 'in-progress';
+      await booking.save();
+    }
+    
+    res.json({
+      message: 'Next customer called successfully',
+      nextCustomer: nextCustomer,
+      queue: queue
+    });
+  } catch (error) {
+    console.error('Call next customer error:', error);
+    res.status(500).json({ message: 'Server error calling next customer' });
   }
 });
 

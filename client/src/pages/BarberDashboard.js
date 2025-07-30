@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
-import { authAPI, bookingsAPI, usersAPI, servicesAPI, queueAPI } from '../services/api';
+import { authAPI, bookingsAPI, queueAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { formatDate, formatTime } from '../utils';
 
@@ -20,7 +20,6 @@ const BarberDashboard = () => {
   
   const [todayBookings, setTodayBookings] = useState([]);
   const [currentQueue, setCurrentQueue] = useState(null);
-  const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAvailable, setIsAvailable] = useState(false);
 

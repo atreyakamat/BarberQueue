@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barber Dashboard Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .stat-card { background: white; padding: 15px; border-radius: 5px; text-align: center; border: 1px solid #ddd; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Barber Dashboard Diagnostic Tool</h1>
+    <p>This tool tests all barber functionality after login to identify UI issues</p>
+    
+    <div class="card">
+        <h3>1. Login Test</h3>
+        <button onclick="testLogin()">Login as Barber</button>
+        <div id="loginResult"></div>
+    </div>
+    
+    <div class="card">
+        <h3>2. Dashboard Data Test</h3>
+        <button onclick="testDashboardData()">Load Dashboard Data</button>
+        <div id="dashboardResult"></div>
+    </div>
+    
+    <div class="card">
+        <h3>3. Real-time Data</h3>
+        <div id="liveData"></div>
+    </div>
+    
+    <script>
+        let currentToken = localStorage.getItem('token');
+        let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+        
+        function updateStatus(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${type}">${content}</div>`;
+        }
+        
+        async function testLogin() {
+            updateStatus('loginResult', 'Attempting login...', 'info');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone: '9629152617',
+                        password: 'barber123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    updateStatus('loginResult', `
+                        <h4>✅ Login Successful!</h4>
+                        <p><strong>Name:</strong> ${data.user.name}</p>
+                        <p><strong>Role:</strong> ${data.user.role}</p>
+                        <p><strong>Shop:</strong> ${data.user.shopName}</p>
+                        <p><strong>Available:</strong> ${data.user.isAvailable ? 'Yes' : 'No'}</p>
+                    `, 'success');
+                } else {
+                    updateStatus('loginResult', `❌ Login Failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                updateStatus('loginResult', `❌ Network Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDashboardData() {
+            if (!currentToken) {
+                updateStatus('dashboardResult', '⚠️ Please login first', 'error');
+                return;
+            }
+            
+            updateStatus('dashboardResult', 'Loading dashboard data...', 'info');
+            
+            try {
+                const headers = {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                };
+                
+                // Test all dashboard endpoints
+                const [statsRes, todayRes, queueRes, bookingsRes] = await Promise.all([
+                    fetch('/api/bookings/stats', { headers }),
+                    fetch('/api/bookings/today', { headers }),
+                    fetch('/api/queue/my-queue', { headers }),
+                    fetch('/api/bookings/barber-bookings', { headers })
+                ]);
+                
+                const stats = await statsRes.json();
+                const today = await todayRes.json();
+                const queue = await queueRes.json();
+                const bookings = await bookingsRes.json();
+                
+                updateStatus('dashboardResult', `
+                    <h4>✅ Dashboard Data Loaded Successfully!</h4>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <h5>📊 Statistics</h5>
+                            <p>Total Bookings: ${stats.totalBookings}</p>
+                            <p>Today: ${stats.todayBookings}</p>
+                            <p>Revenue: ₹${stats.totalRevenue}</p>
+                        </div>
+                        <div class="stat-card">
+                            <h5>📅 Today's Bookings</h5>
+                            <p>Count: ${today.bookings?.length || 0}</p>
+                        </div>
+                        <div class="stat-card">
+                            <h5>🚶‍♂️ Queue</h5>
+                            <p>Length: ${queue.queueLength || 0}</p>
+                            <p>Serving: ${queue.currentlyServing || 'No one'}</p>
+                        </div>
+                        <div class="stat-card">
+                            <h5>📋 All Bookings</h5>
+                            <p>Total: ${bookings.bookings?.length || 0}</p>
+                        </div>
+                    </div>
+                    <details>
+                        <summary>Raw Data (Click to expand)</summary>
+                        <pre>${JSON.stringify({stats, today, queue, bookings}, null, 2)}</pre>
+                    </details>
+                `, 'success');
+                
+                updateLiveData();
+                
+            } catch (error) {
+                updateStatus('dashboardResult', `❌ Dashboard Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function updateLiveData() {
+            const liveDataDiv = document.getElementById('liveData');
+            liveDataDiv.innerHTML = `
+                <h4>🔴 Live Status</h4>
+                <p><strong>Current Time:</strong> ${new Date().toLocaleString()}</p>
+                <p><strong>Logged in as:</strong> ${currentUser?.name || 'Not logged in'}</p>
+                <p><strong>Role:</strong> ${currentUser?.role || 'Unknown'}</p>
+                <p><strong>Token stored:</strong> ${currentToken ? 'Yes' : 'No'}</p>
+                <p><strong>Local Storage:</strong> ${localStorage.getItem('user') ? 'Has user data' : 'No user data'}</p>
+            `;
+        }
+        
+        // Update live data every 5 seconds
+        setInterval(updateLiveData, 5000);
+        
+        // Check if already logged in
+        window.addEventListener('load', () => {
+            updateLiveData();
+            if (currentToken && currentUser) {
+                updateStatus('loginResult', `
+                    <h4>ℹ️ Already Logged In</h4>
+                    <p>Found existing session for: ${currentUser.name}</p>
+                    <p>Role: ${currentUser.role}</p>
+                `, 'info');
+            }
+        });
+    </script>
+</body>
+</html>

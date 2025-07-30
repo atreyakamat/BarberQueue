@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarberQueue - All User Types Test</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: #333; margin-bottom: 10px; }
+        .header p { color: #666; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; }
+        .card-header { padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .card-header.customer { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .card-header.barber { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .card-header.admin { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333; }
+        .card-content { padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #4facfe; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background: #4facfe; color: white; }
+        .btn-primary:hover { background: #369ce8; }
+        .btn-success { background: #28a745; color: white; margin-top: 10px; }
+        .btn-success:hover { background: #218838; }
+        .result { margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 14px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .links { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+        .links h4 { margin-bottom: 10px; color: #333; }
+        .links a { display: block; margin: 5px 0; color: #4facfe; text-decoration: none; }
+        .links a:hover { text-decoration: underline; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 BarberQueue - Complete User Testing</h1>
+            <p>Test registration and login for all user types</p>
+            <div>
+                <span class="status-indicator status-online"></span>Backend: <span id="backendStatus">Checking...</span>
+                <span class="status-indicator status-online" style="margin-left: 20px;"></span>Frontend: <span id="frontendStatus">Active</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Customer Card -->
+            <div class="card">
+                <div class="card-header customer">
+                    <h3>👤 Customer Portal</h3>
+                    <p>Book appointments and manage bookings</p>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label>Action:</label>
+                        <select id="customerAction">
+                            <option value="register">Register New Customer</option>
+                            <option value="login">Login Existing Customer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" id="customerName" value="Test Customer" placeholder="Enter your name">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone:</label>
+                        <input type="tel" id="customerPhone" value="9307906798" placeholder="Enter phone number">
+                    </div>
+                    <div class="form-group">
+                        <label>Email (Optional):</label>
+                        <input type="email" id="customerEmail" value="customer@test.com" placeholder="Enter email">
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="customerPassword" value="customer123" placeholder="Enter password">
+                    </div>
+                    <button class="btn btn-primary" onclick="handleCustomer()">Execute</button>
+                    <button class="btn btn-success" onclick="redirectToDashboard('customer')">Go to Dashboard</button>
+                    <div id="customerResult"></div>
+                    
+                    <div class="links">
+                        <h4>🔗 Customer Links:</h4>
+                        <a href="http://localhost:3000/register" target="_blank">Registration Page</a>
+                        <a href="http://localhost:3000/login" target="_blank">Login Page</a>
+                        <a href="http://localhost:3000/dashboard" target="_blank">Customer Dashboard</a>
+                        <a href="http://localhost:3000/bookings" target="_blank">My Bookings</a>
+                        <a href="http://localhost:3000/barbers" target="_blank">Find Barbers</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barber Card -->
+            <div class="card">
+                <div class="card-header barber">
+                    <h3>💼 Barber Portal</h3>
+                    <p>Manage your barbershop and appointments</p>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label>Action:</label>
+                        <select id="barberAction">
+                            <option value="register">Register New Barber</option>
+                            <option value="login">Login Existing Barber</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" id="barberName" value="Test Barber Professional" placeholder="Enter your name">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone:</label>
+                        <input type="tel" id="barberPhone" value="9165912077" placeholder="Enter phone number">
+                    </div>
+                    <div class="form-group">
+                        <label>Email (Optional):</label>
+                        <input type="email" id="barberEmail" value="barber@test.com" placeholder="Enter email">
+                    </div>
+                    <div class="form-group">
+                        <label>Shop Name:</label>
+                        <input type="text" id="barberShop" value="Professional Test Barbershop" placeholder="Enter shop name">
+                    </div>
+                    <div class="form-group">
+                        <label>Shop Address:</label>
+                        <input type="text" id="barberAddress" value="Test Street, Test City - 123456" placeholder="Enter shop address">
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="barberPassword" value="barber123" placeholder="Enter password">
+                    </div>
+                    <button class="btn btn-primary" onclick="handleBarber()">Execute</button>
+                    <button class="btn btn-success" onclick="redirectToDashboard('barber')">Go to Dashboard</button>
+                    <div id="barberResult"></div>
+                    
+                    <div class="links">
+                        <h4>🔗 Barber Links:</h4>
+                        <a href="http://localhost:3000/register" target="_blank">Registration Page</a>
+                        <a href="http://localhost:3000/login" target="_blank">Login Page</a>
+                        <a href="http://localhost:3000/dashboard" target="_blank">Barber Dashboard</a>
+                        <a href="http://localhost:3000/barber/bookings" target="_blank">Manage Bookings</a>
+                        <a href="http://localhost:3000/barber/queue" target="_blank">Queue Management</a>
+                        <a href="http://localhost:3000/profile" target="_blank">Profile Settings</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Card -->
+            <div class="card">
+                <div class="card-header admin">
+                    <h3>🔐 Admin Portal</h3>
+                    <p>System administration and oversight</p>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label>Phone:</label>
+                        <input type="tel" id="adminPhone" value="9999999999" placeholder="Admin phone" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="adminPassword" value="admin123" placeholder="Enter admin password">
+                    </div>
+                    <button class="btn btn-primary" onclick="handleAdmin()">Login as Admin</button>
+                    <button class="btn btn-success" onclick="redirectToDashboard('admin')">Go to Dashboard</button>
+                    <div id="adminResult"></div>
+                    
+                    <div class="links">
+                        <h4>🔗 Admin Links:</h4>
+                        <a href="http://localhost:3000/login" target="_blank">Admin Login</a>
+                        <a href="http://localhost:3000/dashboard" target="_blank">Admin Dashboard</a>
+                        <a href="http://localhost:3000/admin/users" target="_blank">User Management</a>
+                        <a href="http://localhost:3000/admin/services" target="_blank">Service Management</a>
+                        <a href="http://localhost:3000/admin/reports" target="_blank">Reports & Analytics</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center; padding: 20px; background: white; border-radius: 12px;">
+            <h3>🔧 Additional Test Tools</h3>
+            <div style="margin-top: 15px;">
+                <a href="http://localhost:3000/test-login.html" target="_blank" style="margin: 0 10px; color: #4facfe;">Simple Login Test</a>
+                <a href="http://localhost:3000/barber-test.html" target="_blank" style="margin: 0 10px; color: #4facfe;">Barber Dashboard Test</a>
+                <a href="http://localhost:3000" target="_blank" style="margin: 0 10px; color: #4facfe;">Main Application</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check backend status
+        async function checkBackendStatus() {
+            try {
+                const response = await fetch('/api/health');
+                document.getElementById('backendStatus').textContent = response.ok ? 'Online' : 'Issues';
+            } catch (error) {
+                document.getElementById('backendStatus').textContent = 'Offline';
+            }
+        }
+
+        function updateResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${type}">${content}</div>`;
+        }
+
+        async function handleCustomer() {
+            const action = document.getElementById('customerAction').value;
+            const name = document.getElementById('customerName').value;
+            const phone = document.getElementById('customerPhone').value;
+            const email = document.getElementById('customerEmail').value;
+            const password = document.getElementById('customerPassword').value;
+
+            updateResult('customerResult', 'Processing...', 'info');
+
+            try {
+                let endpoint, data;
+                
+                if (action === 'register') {
+                    endpoint = '/api/auth/register';
+                    data = { name, phone, email, password, role: 'customer' };
+                } else {
+                    endpoint = '/api/auth/login';
+                    data = { phone, password };
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    updateResult('customerResult', `
+                        <h4>✅ Customer ${action} successful!</h4>
+                        <p><strong>Name:</strong> ${result.user.name}</p>
+                        <p><strong>Role:</strong> ${result.user.role}</p>
+                        <p><strong>Phone:</strong> ${result.user.phone}</p>
+                    `, 'success');
+                } else {
+                    updateResult('customerResult', `❌ ${action} failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                updateResult('customerResult', `❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleBarber() {
+            const action = document.getElementById('barberAction').value;
+            const name = document.getElementById('barberName').value;
+            const phone = document.getElementById('barberPhone').value;
+            const email = document.getElementById('barberEmail').value;
+            const shopName = document.getElementById('barberShop').value;
+            const shopAddress = document.getElementById('barberAddress').value;
+            const password = document.getElementById('barberPassword').value;
+
+            updateResult('barberResult', 'Processing...', 'info');
+
+            try {
+                let endpoint, data;
+                
+                if (action === 'register') {
+                    endpoint = '/api/auth/register';
+                    data = { name, phone, email, password, role: 'barber', shopName, shopAddress };
+                } else {
+                    endpoint = '/api/auth/login';
+                    data = { phone, password };
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    updateResult('barberResult', `
+                        <h4>✅ Barber ${action} successful!</h4>
+                        <p><strong>Name:</strong> ${result.user.name}</p>
+                        <p><strong>Role:</strong> ${result.user.role}</p>
+                        <p><strong>Shop:</strong> ${result.user.shopName}</p>
+                        <p><strong>Phone:</strong> ${result.user.phone}</p>
+                    `, 'success');
+                } else {
+                    updateResult('barberResult', `❌ ${action} failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                updateResult('barberResult', `❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleAdmin() {
+            const phone = document.getElementById('adminPhone').value;
+            const password = document.getElementById('adminPassword').value;
+
+            updateResult('adminResult', 'Processing...', 'info');
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, password })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    updateResult('adminResult', `
+                        <h4>✅ Admin login successful!</h4>
+                        <p><strong>Name:</strong> ${result.user.name}</p>
+                        <p><strong>Role:</strong> ${result.user.role}</p>
+                        <p><strong>Phone:</strong> ${result.user.phone}</p>
+                    `, 'success');
+                } else {
+                    updateResult('adminResult', `❌ Login failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                updateResult('adminResult', `❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        function redirectToDashboard(userType) {
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            if (!user) {
+                alert('Please login first!');
+                return;
+            }
+            
+            // Open dashboard in new tab
+            window.open('http://localhost:3000/dashboard', '_blank');
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            checkBackendStatus();
+        });
+    </script>
+</body>
+</html>

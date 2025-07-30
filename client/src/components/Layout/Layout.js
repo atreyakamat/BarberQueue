@@ -1,4 +1,4 @@
-import React from 'react';
+// ...existing code...
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { useAuth } from '../../contexts/AuthContext';

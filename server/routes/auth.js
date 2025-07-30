@@ -215,4 +215,25 @@ router.put('/availability', auth, async (req, res) => {
   }
 });
 
+// Alias for toggle-availability
+router.post('/toggle-availability', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user || user.role !== 'barber') {
+      return res.status(403).json({ message: 'Only barbers can update availability' });
+    }
+
+    user.isAvailable = !user.isAvailable;
+    await user.save();
+
+    res.json({
+      message: `Availability updated to ${user.isAvailable ? 'available' : 'unavailable'}`,
+      isAvailable: user.isAvailable
+    });
+  } catch (error) {
+    console.error('Availability update error:', error);
+    res.status(500).json({ message: 'Server error updating availability' });
+  }
+});
+
 module.exports = router;

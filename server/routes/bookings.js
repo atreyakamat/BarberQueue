@@ -7,6 +7,71 @@ const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Get barber statistics - Must come before /:id route
+router.get('/stats', auth, authorize('barber'), async (req, res) => {
+  try {
+    const barberId = req.user.userId;
+    
+    // Get all bookings for this barber
+    const allBookings = await Booking.find({ barber: barberId });
+    
+    // Today's bookings
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    
+    const todayBookings = await Booking.find({
+      barber: barberId,
+      scheduledTime: { $gte: startOfDay, $lte: endOfDay }
+    });
+    
+    // Calculate statistics
+    const stats = {
+      totalBookings: allBookings.length,
+      todayBookings: todayBookings.length,
+      completedBookings: allBookings.filter(b => b.status === 'completed').length,
+      pendingBookings: allBookings.filter(b => b.status === 'pending').length,
+      confirmedBookings: allBookings.filter(b => b.status === 'confirmed').length,
+      cancelledBookings: allBookings.filter(b => b.status === 'cancelled').length,
+      totalRevenue: allBookings
+        .filter(b => b.status === 'completed')
+        .reduce((sum, b) => sum + b.totalAmount, 0),
+      todayRevenue: todayBookings
+        .filter(b => b.status === 'completed')
+        .reduce((sum, b) => sum + b.totalAmount, 0)
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Get barber stats error:', error);
+    res.status(500).json({ message: 'Server error fetching barber statistics' });
+  }
+});
+
+// Get today's bookings for barber - Must come before /:id route
+router.get('/today', auth, authorize('barber'), async (req, res) => {
+  try {
+    const barberId = req.user.userId;
+    
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    
+    const todayBookings = await Booking.find({
+      barber: barberId,
+      scheduledTime: { $gte: startOfDay, $lte: endOfDay }
+    })
+    .populate('customer', 'name phone')
+    .populate('services.service', 'name duration price')
+    .sort({ scheduledTime: 1 });
+    
+    res.json({ bookings: todayBookings });
+  } catch (error) {
+    console.error('Get today bookings error:', error);
+    res.status(500).json({ message: 'Server error fetching today\'s bookings' });
+  }
+});
+
 // Create new booking
 router.post('/', auth, authorize('customer'), [
   body('barberId').isMongoId().withMessage('Invalid barber ID'),

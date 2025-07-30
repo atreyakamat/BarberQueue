@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { usersAPI } from '../services/api';
 import { formatCurrency } from '../utils';
 import { 
-  Search, 
   Star, 
   MapPin, 
   Clock, 
