@@ -25,6 +25,9 @@ import BarberDashboard from './pages/BarberDashboard';
 import BarberBookings from './pages/BarberBookings';
 import BarberServiceManager from './pages/BarberServiceManager';
 
+// Onboarding
+import OnboardingTour from './components/Onboarding/OnboardingTour';
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -124,6 +127,7 @@ function App() {
                 </div>} />
               </Routes>
             </Layout>
+            <OnboardingTour />
             <Toaster 
               position="top-right"
               toastOptions={{

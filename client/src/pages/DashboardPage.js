@@ -127,22 +127,22 @@ const CustomerDashboard = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto px-4 py-4 sm:p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user.name}!</h1>
-        <p className="text-gray-600">Here's your booking overview and nearby barbers</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Welcome back, {user.name}!</h1>
+        <p className="text-sm sm:text-base text-gray-600">Here's your booking overview and nearby barbers</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Bookings</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalBookings}</p>
+              <p className="text-xs sm:text-sm text-gray-600">Total Bookings</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.totalBookings}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h8a2 2 0 012 2v4m-8 0v10a2 2 0 002 2h8a2 2 0 002-2V7" />
               </svg>
@@ -150,13 +150,13 @@ const CustomerDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Upcoming</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.upcomingBookings}</p>
+              <p className="text-xs sm:text-sm text-gray-600">Upcoming</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.upcomingBookings}</p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -164,13 +164,13 @@ const CustomerDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.completedBookings}</p>
+              <p className="text-xs sm:text-sm text-gray-600">Completed</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.completedBookings}</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -178,13 +178,13 @@ const CustomerDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Cancelled</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.cancelledBookings}</p>
+              <p className="text-xs sm:text-sm text-gray-600">Cancelled</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.cancelledBookings}</p>
             </div>
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -194,7 +194,7 @@ const CustomerDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
         <Link
           to="/barbers"
           className="bg-gradient-to-r from-primary to-secondary text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
@@ -241,9 +241,9 @@ const CustomerDashboard = () => {
         </Link>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-8">
         {/* Recent Bookings */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Recent Bookings</h2>
             <Link
@@ -299,7 +299,7 @@ const CustomerDashboard = () => {
         </div>
 
         {/* Nearby Barbers */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Popular Barbers</h2>
             <Link

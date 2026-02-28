@@ -1,10 +1,11 @@
 // ...existing code...
 import Navbar from './Navbar';
 import Footer from './Footer';
+import MobileBottomNav from './MobileBottomNav';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Layout = ({ children }) => {
-  const { loading } = useAuth();
+  const { loading, isAuthenticated } = useAuth();
 
   if (loading) {
     return (
@@ -20,10 +21,11 @@ const Layout = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
-      <main className="flex-1">
+      <main className={`flex-1 ${isAuthenticated ? 'pb-16 md:pb-0' : ''}`}>
         {children}
       </main>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

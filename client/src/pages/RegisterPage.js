@@ -33,6 +33,8 @@ const RegisterPage = () => {
       role: userType,
     });
     if (result.success) {
+      // Flag for onboarding tour
+      sessionStorage.setItem('barberqueue_just_registered', 'true');
       navigate('/dashboard');
     }
   };

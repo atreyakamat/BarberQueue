@@ -76,13 +76,13 @@ const HomePage = () => {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary-600 to-primary-800 text-white">
-        <div className="container mx-auto px-4 py-20">
+        <div className="container mx-auto px-4 py-12 sm:py-20">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6">
               Skip the Queue, 
               <span className="block text-accent-300">Book Your Barber</span>
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-primary-100">
+            <p className="text-base sm:text-xl md:text-2xl mb-6 sm:mb-8 text-primary-100">
               India's first barber-centric appointment and queue management platform
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

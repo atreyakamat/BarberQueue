@@ -127,6 +127,94 @@
   }
 }
 
+/* Mobile touch-friendly targets */
+@layer utilities {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* Improve mobile tap targets and typography */
+@media (max-width: 640px) {
+  /* Larger tap targets for buttons and links */
+  .btn {
+    @apply py-3 text-base;
+    min-height: 44px;
+  }
+
+  .input {
+    @apply py-3 text-base;
+    min-height: 44px;
+  }
+
+  /* Prevent iOS zoom on input focus */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Tighter spacing on mobile */
+  .p-6 {
+    padding: 1rem;
+  }
+
+  /* Better scroll behaviour */
+  html {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Prevent text size adjustment on orientation change */
+  body {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+}
+
+/* Mobile bottom nav spacing */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+  }
+}
+
+/* Smooth page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+/* Improve touch scrolling for lists */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Pull-to-refresh indicator */
+.pull-indicator {
+  @apply flex items-center justify-center py-2 text-sm text-gray-500;
+  transition: transform 0.2s ease;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .dark-mode {
