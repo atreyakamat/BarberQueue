@@ -20,9 +20,10 @@ import QueuePage from './pages/QueuePage';
 import ProfilePage from './pages/ProfilePage';
 import BookingDetailsPage from './pages/BookingDetailsPage';
 
-// Barber Dashboard
+// Barber pages
 import BarberDashboard from './pages/BarberDashboard';
 import BarberBookings from './pages/BarberBookings';
+import BarberServiceManager from './pages/BarberServiceManager';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -104,6 +105,14 @@ function App() {
                   element={
                     <ProtectedRoute allowedRoles={['barber']}>
                       <BarberBookings />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/barber-services" 
+                  element={
+                    <ProtectedRoute allowedRoles={['barber']}>
+                      <BarberServiceManager />
                     </ProtectedRoute>
                   } 
                 />

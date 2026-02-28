@@ -43,12 +43,12 @@ const CustomerDashboard = () => {
 
   useEffect(() => {
     if (socket) {
-      socket.on('booking:updated', handleBookingUpdate);
-      socket.on('queue:position-changed', handleQueueUpdate);
+      socket.on('booking-updated', handleBookingUpdate);
+      socket.on('queue-updated', handleQueueUpdate);
       
       return () => {
-        socket.off('booking:updated');
-        socket.off('queue:position-changed');
+        socket.off('booking-updated');
+        socket.off('queue-updated');
       };
     }
   }, [socket]);
@@ -60,11 +60,13 @@ const CustomerDashboard = () => {
         usersAPI.getBarbers()
       ]);
 
-      setRecentBookings(bookingsResponse.data.slice(0, 5));
-      setNearbyBarbers(barbersResponse.data.slice(0, 4));
+      const bookings = bookingsResponse.data.bookings || bookingsResponse.data || [];
+      const barbers = barbersResponse.data.barbers || barbersResponse.data || [];
+
+      setRecentBookings(bookings.slice(0, 5));
+      setNearbyBarbers(barbers.slice(0, 4));
       
       // Calculate stats
-      const bookings = bookingsResponse.data;
       setStats({
         totalBookings: bookings.length,
         upcomingBookings: bookings.filter(b => b.status === 'confirmed' && new Date(b.scheduledTime) > new Date()).length,
@@ -274,13 +276,13 @@ const CustomerDashboard = () => {
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
                       <span className="text-sm font-bold">
-                        {booking.barber.name.split(' ').map(n => n[0]).join('')}
+                        {(booking.barber?.name || 'B').split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
                     <div>
-                      <div className="font-medium">{booking.barber.name}</div>
+                      <div className="font-medium">{booking.barber?.name || 'Barber'}</div>
                       <div className="text-sm text-gray-600">
-                        {booking.service.name} • {formatDate(booking.date)} • {formatTime(booking.time)}
+                        {booking.services?.map(s => s.service?.name || s.name).filter(Boolean).join(', ') || 'Service'} • {formatDate(booking.scheduledTime)}
                       </div>
                     </div>
                   </div>
@@ -288,9 +290,6 @@ const CustomerDashboard = () => {
                   <div className="flex items-center space-x-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
                       {booking.status}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {getTimeStatus(booking.date, booking.time)}
                     </span>
                   </div>
                 </div>
@@ -333,8 +332,8 @@ const CustomerDashboard = () => {
                     </div>
                     <div>
                       <div className="font-medium">{barber.name}</div>
-                      <div className="text-sm text-gray-600">{barber.phone}</div>
-                      <div className="text-sm text-gray-600">{barber.address}</div>
+                      <div className="text-sm text-gray-600">{barber.shopName || barber.phone}</div>
+                      <div className="text-sm text-gray-600">{barber.shopAddress || ''}</div>
                     </div>
                   </div>
                   

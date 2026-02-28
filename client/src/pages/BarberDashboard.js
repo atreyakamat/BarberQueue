@@ -30,14 +30,12 @@ const BarberDashboard = () => {
 
   useEffect(() => {
     if (socket) {
-      socket.on('booking:created', handleBookingUpdate);
-      socket.on('booking:updated', handleBookingUpdate);
-      socket.on('queue:updated', handleQueueUpdate);
+      socket.on('booking-updated', handleBookingUpdate);
+      socket.on('queue-updated', handleQueueUpdate);
       
       return () => {
-        socket.off('booking:created');
-        socket.off('booking:updated');
-        socket.off('queue:updated');
+        socket.off('booking-updated');
+        socket.off('queue-updated');
       };
     }
   }, [socket]);
@@ -51,8 +49,12 @@ const BarberDashboard = () => {
       ]);
 
       setStats(statsResponse.data);
-      setTodayBookings(bookingsResponse.data);
+      setTodayBookings(bookingsResponse.data.bookings || bookingsResponse.data || []);
       setCurrentQueue(queueResponse.data);
+      
+      // Derive queue length from queue data (not returned by stats endpoint)
+      const qLen = queueResponse.data?.queue?.length || 0;
+      setStats(prev => ({ ...prev, ...statsResponse.data, queueLength: qLen }));
     } catch (error) {
       toast.error('Error fetching dashboard data');
     } finally {
@@ -63,7 +65,7 @@ const BarberDashboard = () => {
   const fetchUserAvailability = async () => {
     try {
       const response = await authAPI.getProfile();
-      setIsAvailable(response.data.isAvailable);
+      setIsAvailable(response.data.user?.isAvailable ?? response.data.isAvailable ?? false);
     } catch (error) {
       console.error('Error fetching availability');
     }
@@ -102,19 +104,16 @@ const BarberDashboard = () => {
   };
 
   const callNextCustomer = async () => {
-    if (!currentQueue || currentQueue.customers.length === 0) {
+    const queueItems = currentQueue?.queue || currentQueue?.customers || [];
+    if (!currentQueue || queueItems.length === 0) {
       toast.error('No customers in queue');
       return;
     }
 
     try {
       await queueAPI.callNextCustomer(currentQueue._id);
-      
-      if (socket) {
-        socket.emit('queue:next-customer', currentQueue._id);
-      }
-      
       toast.success('Next customer called');
+      fetchDashboardData();
     } catch (error) {
       toast.error('Error calling next customer');
     }
@@ -254,13 +253,13 @@ const BarberDashboard = () => {
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
                       <span className="text-sm font-bold">
-                        {booking.customer.name.split(' ').map(n => n[0]).join('')}
+                        {booking.customer?.name?.split(' ').map(n => n[0]).join('') || '?'}
                       </span>
                     </div>
                     <div>
-                      <div className="font-medium">{booking.customer.name}</div>
+                      <div className="font-medium">{booking.customer?.name || 'Customer'}</div>
                       <div className="text-sm text-gray-600">
-                        {booking.service.name} • {formatTime(booking.time)}
+                        {booking.services?.map(s => s.service?.name || s.name).join(', ') || 'Service'} • {formatTime(booking.scheduledTime || booking.time)}
                       </div>
                     </div>
                   </div>
@@ -297,7 +296,7 @@ const BarberDashboard = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Current Queue</h2>
-            {currentQueue && currentQueue.customers.length > 0 && (
+            {currentQueue && (currentQueue.queue || currentQueue.customers || []).length > 0 && (
               <button
                 onClick={callNextCustomer}
                 className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
@@ -307,53 +306,65 @@ const BarberDashboard = () => {
             )}
           </div>
           
-          {!currentQueue || currentQueue.customers.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-gray-400 mb-4">
-                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
+          {(() => {
+            const queueItems = currentQueue?.queue || currentQueue?.customers || [];
+            return !currentQueue || queueItems.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                </div>
+                <p className="text-gray-600">No customers in queue</p>
               </div>
-              <p className="text-gray-600">No customers in queue</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {currentQueue.customers.slice(0, 10).map((customer, index) => (
-                <div 
-                  key={customer._id} 
-                  className={`flex items-center justify-between p-3 rounded-lg ${
-                    index === 0 ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                      index === 0 ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'
-                    }`}>
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="font-medium">Customer {index + 1}</div>
-                      <div className="text-sm text-gray-600">
-                        Joined: {formatTime(customer.joinedAt)}
+            ) : (
+              <div className="space-y-3">
+                {queueItems.slice(0, 10).map((item, index) => {
+                  const customerName = item.booking?.customer?.name || `Customer ${index + 1}`;
+                  const serviceSummary = item.booking?.services?.map(s => s.service?.name).filter(Boolean).join(', ') || '';
+                  return (
+                    <div 
+                      key={item._id || index} 
+                      className={`flex items-center justify-between p-3 rounded-lg ${
+                        item.status === 'in-progress' ? 'bg-green-50 border border-green-200' : 
+                        item.status === 'notified' ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                          item.status === 'in-progress' ? 'bg-green-500 text-white' : 
+                          item.status === 'notified' ? 'bg-yellow-500 text-white' : 'bg-gray-400 text-white'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="font-medium">{customerName}</div>
+                          <div className="text-sm text-gray-600">
+                            {serviceSummary && <span>{serviceSummary} • </span>}
+                            Joined: {formatTime(item.joinedAt)}
+                          </div>
+                        </div>
                       </div>
+                      
+                      <span className={`text-sm font-medium ${
+                        item.status === 'in-progress' ? 'text-green-600' : 
+                        item.status === 'notified' ? 'text-yellow-600' : 'text-gray-500'
+                      }`}>
+                        {item.status === 'in-progress' ? 'In Service' : 
+                         item.status === 'notified' ? 'Notified' : 'Waiting'}
+                      </span>
                     </div>
+                  );
+                })}
+                
+                {queueItems.length > 10 && (
+                  <div className="text-center text-gray-500 py-2">
+                    ... and {queueItems.length - 10} more
                   </div>
-                  
-                  {index === 0 && (
-                    <span className="text-sm font-medium text-green-600">
-                      Current
-                    </span>
-                  )}
-                </div>
-              ))}
-              
-              {currentQueue.customers.length > 10 && (
-                <div className="text-center text-gray-500 py-2">
-                  ... and {currentQueue.customers.length - 10} more
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

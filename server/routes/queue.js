@@ -6,6 +6,34 @@ const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Helper: Notify customers when their queue position is <= 2
+async function notifyNearFrontCustomers(queue, io) {
+  const activeItems = queue.queue.filter(item =>
+    ['waiting', 'notified'].includes(item.status)
+  );
+
+  for (let i = 0; i < activeItems.length; i++) {
+    const position = i + 1; // 1-based position
+    if (position <= 2) {
+      try {
+        const booking = await Booking.findById(activeItems[i].booking);
+        if (booking) {
+          io.to(`customer-${booking.customer}`).emit('notification', {
+            type: 'info',
+            message: position === 1
+              ? '🎉 You are next! Please be ready.'
+              : '⏳ Almost your turn! You are #2 in the queue.',
+            position,
+            bookingId: booking._id.toString()
+          });
+        }
+      } catch (err) {
+        console.error('Error notifying near-front customer:', err);
+      }
+    }
+  }
+}
+
 // Get my queue (for barbers) - Must come before /:barberId route
 router.get('/my-queue', auth, authorize('barber'), async (req, res) => {
   try {
@@ -181,6 +209,9 @@ router.post('/join', auth, authorize('customer'), [
       }
     });
 
+    // Notify customers near the front of the queue (position <= 2)
+    await notifyNearFrontCustomers(queue, req.io);
+
     res.status(201).json({
       message: 'Successfully joined queue',
       booking: {
@@ -338,6 +369,9 @@ router.put('/update/:bookingId', auth, authorize('barber'), [
       ).length
     });
 
+    // Notify customers near the front of the queue (position <= 2)
+    await notifyNearFrontCustomers(queue, req.io);
+
     res.json({
       message: 'Queue status updated successfully',
       queueItem
@@ -390,6 +424,9 @@ router.delete('/remove/:bookingId', auth, authorize('barber'), async (req, res) 
       removedBooking: bookingId,
       queueLength: queue.queue.length
     });
+
+    // Notify customers near the front of the queue (position <= 2)
+    await notifyNearFrontCustomers(queue, req.io);
 
     res.json({ message: 'Booking removed from queue successfully' });
   } catch (error) {
@@ -474,8 +511,9 @@ router.post('/:queueId/next', auth, authorize('barber'), async (req, res) => {
     }
     
     // Update the current customer to in-progress
-    nextCustomer.status = 'notified';
+    nextCustomer.status = 'in-progress';
     nextCustomer.notifiedAt = new Date();
+    nextCustomer.startedAt = new Date();
     
     // If there was someone currently being served, mark them as completed
     if (queue.currentlyServing) {
@@ -497,7 +535,17 @@ router.post('/:queueId/next', auth, authorize('barber'), async (req, res) => {
     if (booking) {
       booking.status = 'in-progress';
       await booking.save();
+
+      // Notify the called customer
+      req.io.to(`customer-${booking.customer}`).emit('notification', {
+        type: 'info',
+        message: '🎉 It\'s your turn! Your service is about to begin.',
+        bookingId: booking._id.toString()
+      });
     }
+
+    // Notify customers near the front of the queue (position <= 2)
+    await notifyNearFrontCustomers(queue, req.io);
     
     res.json({
       message: 'Next customer called successfully',

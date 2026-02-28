@@ -281,13 +281,13 @@ const RegisterPage = () => {
             />
             <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
               I agree to the{' '}
-              <Link to="/terms" className="text-primary-600 hover:text-primary-500">
+              <span className="text-primary-600 hover:text-primary-500 cursor-pointer">
                 Terms and Conditions
-              </Link>{' '}
+              </span>{' '}
               and{' '}
-              <Link to="/privacy" className="text-primary-600 hover:text-primary-500">
+              <span className="text-primary-600 hover:text-primary-500 cursor-pointer">
                 Privacy Policy
-              </Link>
+              </span>
             </label>
           </div>
           {errors.terms && (

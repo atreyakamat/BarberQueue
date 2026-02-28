@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
-import { api } from '../services/api';
+import { bookingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { formatDate, formatTime } from '../utils';
 
@@ -34,20 +34,18 @@ const BarberBookings = () => {
 
   useEffect(() => {
     if (socket) {
-      socket.on('booking:created', handleBookingUpdate);
-      socket.on('booking:updated', handleBookingUpdate);
+      socket.on('booking-updated', handleBookingUpdate);
       
       return () => {
-        socket.off('booking:created');
-        socket.off('booking:updated');
+        socket.off('booking-updated');
       };
     }
   }, [socket]);
 
   const fetchBookings = async () => {
     try {
-      const response = await api.get('/bookings/barber-bookings');
-      setBookings(response.data);
+      const response = await bookingsAPI.getBarberBookings();
+      setBookings(response.data.bookings || response.data || []);
     } catch (error) {
       toast.error('Error fetching bookings');
     } finally {
@@ -80,36 +78,45 @@ const BarberBookings = () => {
 
     // Date filter
     if (filters.date !== 'all') {
-      const today = new Date();
-      const todayStr = today.toISOString().split('T')[0];
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
       
       switch (filters.date) {
         case 'today':
-          filtered = filtered.filter(booking => booking.date === todayStr);
-          break;
-        case 'week':
-          const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
-          const weekEnd = new Date(today.setDate(today.getDate() - today.getDay() + 6));
           filtered = filtered.filter(booking => {
-            const bookingDate = new Date(booking.date);
+            const dt = new Date(booking.scheduledTime);
+            return dt.toISOString().split('T')[0] === todayStr;
+          });
+          break;
+        case 'week': {
+          const weekStart = new Date(now);
+          weekStart.setDate(now.getDate() - now.getDay());
+          weekStart.setHours(0, 0, 0, 0);
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          weekEnd.setHours(23, 59, 59, 999);
+          filtered = filtered.filter(booking => {
+            const bookingDate = new Date(booking.scheduledTime);
             return bookingDate >= weekStart && bookingDate <= weekEnd;
           });
           break;
-        case 'month':
-          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-          const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        }
+        case 'month': {
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
           filtered = filtered.filter(booking => {
-            const bookingDate = new Date(booking.date);
+            const bookingDate = new Date(booking.scheduledTime);
             return bookingDate >= monthStart && bookingDate <= monthEnd;
           });
           break;
+        }
       }
     }
 
     // Custom date range filter
     if (dateRange.start && dateRange.end) {
       filtered = filtered.filter(booking => {
-        const bookingDate = booking.date;
+        const bookingDate = new Date(booking.scheduledTime).toISOString().split('T')[0];
         return bookingDate >= dateRange.start && bookingDate <= dateRange.end;
       });
     }
@@ -118,16 +125,16 @@ const BarberBookings = () => {
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
       filtered = filtered.filter(booking => 
-        booking.customer.name.toLowerCase().includes(searchTerm) ||
-        booking.customer.phone.includes(searchTerm) ||
-        booking.service.name.toLowerCase().includes(searchTerm)
+        booking.customer?.name?.toLowerCase().includes(searchTerm) ||
+        booking.customer?.phone?.includes(searchTerm) ||
+        booking.services?.some(s => (s.service?.name || '').toLowerCase().includes(searchTerm))
       );
     }
 
-    // Sort by date and time
+    // Sort by scheduledTime
     filtered.sort((a, b) => {
-      const dateA = new Date(`${a.date}T${a.time}`);
-      const dateB = new Date(`${b.date}T${b.time}`);
+      const dateA = new Date(a.scheduledTime);
+      const dateB = new Date(b.scheduledTime);
       return dateB - dateA;
     });
 
@@ -136,7 +143,7 @@ const BarberBookings = () => {
 
   const updateBookingStatus = async (bookingId, status) => {
     try {
-      await api.put(`/bookings/${bookingId}/status`, { status });
+      await bookingsAPI.updateBookingStatus(bookingId, status);
       toast.success('Booking updated successfully');
       fetchBookings();
     } catch (error) {
@@ -202,14 +209,14 @@ const BarberBookings = () => {
 
   const exportBookings = () => {
     const csvContent = [
-      ['Date', 'Time', 'Customer', 'Phone', 'Service', 'Price', 'Status'],
+      ['Date', 'Time', 'Customer', 'Phone', 'Services', 'Amount', 'Status'],
       ...filteredBookings.map(booking => [
-        formatDate(booking.date),
-        formatTime(booking.time),
-        booking.customer.name,
-        booking.customer.phone,
-        booking.service.name,
-        booking.service.price,
+        formatDate(booking.scheduledTime),
+        formatTime(booking.scheduledTime),
+        booking.customer?.name || '',
+        booking.customer?.phone || '',
+        booking.services?.map(s => s.service?.name || s.name).filter(Boolean).join('; ') || '',
+        booking.totalAmount || 0,
         booking.status
       ])
     ].map(row => row.join(',')).join('\n');
@@ -360,32 +367,35 @@ const BarberBookings = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredBookings.map(booking => (
+                {filteredBookings.map(booking => {
+                  const serviceNames = booking.services?.map(s => s.service?.name || s.name).filter(Boolean).join(', ') || 'Service';
+                  const totalDuration = booking.totalDuration || booking.services?.reduce((sum, s) => sum + (s.service?.duration || 0), 0) || 0;
+                  return (
                   <tr key={booking._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
                           <span className="text-sm font-bold">
-                            {booking.customer.name.split(' ').map(n => n[0]).join('')}
+                            {(booking.customer?.name || 'C').split(' ').map(n => n[0]).join('')}
                           </span>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {booking.customer.name}
+                            {booking.customer?.name || 'Customer'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {booking.customer.phone}
+                            {booking.customer?.phone || ''}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{booking.service.name}</div>
-                      <div className="text-sm text-gray-500">{booking.service.duration} min</div>
+                      <div className="text-sm text-gray-900">{serviceNames}</div>
+                      <div className="text-sm text-gray-500">{totalDuration} min</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatDate(booking.date)}</div>
-                      <div className="text-sm text-gray-500">{formatTime(booking.time)}</div>
+                      <div className="text-sm text-gray-900">{formatDate(booking.scheduledTime)}</div>
+                      <div className="text-sm text-gray-500">{formatTime(booking.scheduledTime)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>
@@ -393,7 +403,7 @@ const BarberBookings = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ₹{booking.service.price}
+                      ₹{booking.totalAmount || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
@@ -410,7 +420,8 @@ const BarberBookings = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -437,47 +448,55 @@ const BarberBookings = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Customer</label>
-                  <p className="text-gray-900">{selectedBooking.customer.name}</p>
+                  <p className="text-gray-900">{selectedBooking.customer?.name || 'Customer'}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <p className="text-gray-900">{selectedBooking.customer.phone}</p>
+                  <p className="text-gray-900">{selectedBooking.customer?.phone || ''}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Service</label>
-                  <p className="text-gray-900">{selectedBooking.service.name}</p>
+                  <label className="block text-sm font-medium text-gray-700">Services</label>
+                  <p className="text-gray-900">{selectedBooking.services?.map(s => s.service?.name || s.name).filter(Boolean).join(', ') || 'Service'}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Price</label>
-                  <p className="text-gray-900">₹{selectedBooking.service.price}</p>
+                  <label className="block text-sm font-medium text-gray-700">Total Price</label>
+                  <p className="text-gray-900">₹{selectedBooking.totalAmount || 0}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Date</label>
-                  <p className="text-gray-900">{formatDate(selectedBooking.date)}</p>
+                  <p className="text-gray-900">{formatDate(selectedBooking.scheduledTime)}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Time</label>
-                  <p className="text-gray-900">{formatTime(selectedBooking.time)}</p>
+                  <p className="text-gray-900">{formatTime(selectedBooking.scheduledTime)}</p>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Status</label>
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedBooking.status)}`}>
-                  {selectedBooking.status}
-                </span>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedBooking.status)}`}>
+                    {selectedBooking.status}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Duration</label>
+                  <p className="text-gray-900">{selectedBooking.totalDuration || 0} minutes</p>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Service Description</label>
-                <p className="text-gray-900">{selectedBooking.service.description}</p>
-              </div>
+              {selectedBooking.notes && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Notes</label>
+                  <p className="text-gray-900">{selectedBooking.notes}</p>
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end space-x-3">

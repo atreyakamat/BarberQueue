@@ -42,6 +42,7 @@ const Navbar = () => {
   const barberNavItems = [
     { path: '/barber-dashboard', label: 'Dashboard', icon: BarChart3 },
     { path: '/barber-bookings', label: 'Bookings', icon: Calendar },
+    { path: '/barber-services', label: 'Services', icon: Scissors },
   ];
 
   const navItems = isBarber ? barberNavItems : customerNavItems;
@@ -133,7 +134,7 @@ const Navbar = () => {
                       <span>Profile</span>
                     </Link>
                     <Link
-                      to="/settings"
+                      to="/profile"
                       className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setIsProfileOpen(false)}
                     >

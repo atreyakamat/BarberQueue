@@ -11,7 +11,8 @@ import {
   Grid,
   List,
   Users,
-  Calendar
+  Calendar,
+  Search
 } from 'lucide-react';
 
 const BarbersPage = () => {
@@ -176,10 +177,10 @@ const BarbersPage = () => {
                       {/* Actions */}
                       <div className="flex space-x-2">
                         <Link
-                          to={`/barber/${barber._id}`}
+                          to={`/book/${barber._id}`}
                           className="btn btn-primary flex-1 text-center"
                         >
-                          View Details
+                          View & Book
                         </Link>
                         <Link
                           to={`/book/${barber._id}`}

@@ -29,7 +29,7 @@ const BookingDetailsPage = () => {
   const fetchBookingDetails = async () => {
     try {
       const response = await bookingsAPI.getBooking(bookingId);
-      setBooking(response.data);
+      setBooking(response.data.booking || response.data);
     } catch (error) {
       toast.error('Error fetching booking details');
       navigate('/dashboard');
@@ -43,9 +43,9 @@ const BookingDetailsPage = () => {
       const response = await bookingsAPI.getAvailableSlots({
         barberId: booking.barber._id,
         date: date,
-        serviceIds: booking.services.map(s => s.service._id)
+        serviceIds: booking.services.map(s => s.service?._id || s._id).join(',')
       });
-      setAvailableSlots(response.data);
+      setAvailableSlots(response.data.slots || response.data || []);
     } catch (error) {
       toast.error('Error fetching available slots');
     }
@@ -113,7 +113,7 @@ const BookingDetailsPage = () => {
   const canModifyBooking = () => {
     if (!booking) return false;
     
-    const bookingDateTime = new Date(`${booking.date}T${booking.time}`);
+    const bookingDateTime = new Date(booking.scheduledTime);
     const now = new Date();
     const hoursDiff = (bookingDateTime - now) / (1000 * 60 * 60);
     
@@ -176,7 +176,7 @@ const BookingDetailsPage = () => {
             <div>
               <h2 className="text-xl font-bold">Booking #{booking._id.slice(-6)}</h2>
               <p className="text-white/90">
-                {formatDate(booking.date)} at {formatTime(booking.time)}
+                {formatDate(booking.scheduledTime)} at {formatTime(booking.scheduledTime)}
               </p>
             </div>
             <div className={`px-4 py-2 rounded-full border ${getStatusColor(booking.status)}`}>
@@ -206,26 +206,27 @@ const BookingDetailsPage = () => {
                   </div>
                 </div>
                 <div className="text-sm text-gray-600">
-                  <strong>Address:</strong> {booking.barber.address}
+                  <strong>Address:</strong> {booking.barber.shopAddress || 'N/A'}
                 </div>
               </div>
             </div>
 
             {/* Service Information */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Service Information</h3>
+              <h3 className="text-lg font-semibold mb-4">Services</h3>
               <div className="space-y-3">
-                <div>
-                  <div className="font-semibold">{booking.service.name}</div>
-                  <div className="text-sm text-gray-600">{booking.service.description}</div>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Duration:</span>
-                  <span className="font-semibold">{booking.service.duration} minutes</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Price:</span>
-                  <span className="font-semibold text-primary">₹{booking.service.price}</span>
+                {(booking.services || []).map((s, idx) => (
+                  <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                    <div>
+                      <div className="font-semibold">{s.service?.name || s.name || 'Service'}</div>
+                      <div className="text-xs text-gray-500">{s.service?.duration || s.duration || 0} min</div>
+                    </div>
+                    <span className="font-semibold text-primary">₹{s.service?.price || s.price || 0}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between pt-2 font-bold">
+                  <span>Total ({booking.totalDuration || 0} min)</span>
+                  <span className="text-primary">₹{booking.totalAmount || 0}</span>
                 </div>
               </div>
             </div>

@@ -55,8 +55,8 @@ const BookingPage = () => {
 
   const fetchBarberDetails = async () => {
     try {
-      const response = await usersAPI.getUserById(barberId);
-      setBarber(response.data);
+      const response = await usersAPI.getBarberDetails(barberId);
+      setBarber(response.data.barber || response.data);
     } catch (error) {
       toast.error('Error fetching barber details');
     }
@@ -130,11 +130,6 @@ const BookingPage = () => {
       };
 
       const response = await bookingsAPI.createBooking(bookingData);
-      
-      // Emit socket event for real-time updates
-      if (socket) {
-        socket.emit('booking:created', response.data);
-      }
 
       toast.success('Booking created successfully!');
       navigate('/dashboard');
@@ -179,7 +174,7 @@ const BookingPage = () => {
               <div>
                 <h1 className="text-2xl font-bold">{barber.name}</h1>
                 <p className="text-white/90">{barber.shopName}</p>
-                <p className="text-white/90">{barber.phone}</p>
+                {barber.shopAddress && <p className="text-white/90 text-sm">{barber.shopAddress}</p>}
               </div>
             </div>
             

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+import { bookingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { formatDate, formatTime } from '../utils';
 
@@ -35,8 +35,8 @@ const ProfilePage = () => {
 
   const fetchBookings = async () => {
     try {
-      const response = await api.get('/bookings/my-bookings');
-      setBookings(response.data);
+      const response = await bookingsAPI.getMyBookings();
+      setBookings(response.data.bookings || response.data);
     } catch (error) {
       toast.error('Error fetching bookings');
     }
@@ -66,7 +66,7 @@ const ProfilePage = () => {
 
   const cancelBooking = async (bookingId) => {
     try {
-      await api.put(`/bookings/${bookingId}/cancel`);
+      await bookingsAPI.cancelBooking(bookingId);
       toast.success('Booking cancelled successfully');
       fetchBookings();
     } catch (error) {
@@ -90,7 +90,7 @@ const ProfilePage = () => {
   };
 
   const canCancelBooking = (booking) => {
-    const bookingDateTime = new Date(`${booking.date}T${booking.time}`);
+    const bookingDateTime = new Date(booking.scheduledTime);
     const now = new Date();
     const hoursDiff = (bookingDateTime - now) / (1000 * 60 * 60);
     
@@ -232,9 +232,9 @@ const ProfilePage = () => {
                           </div>
                           <div>
                             <h3 className="font-semibold text-gray-900">{booking.barber.name}</h3>
-                            <p className="text-sm text-gray-600">{booking.service.name}</p>
+                            <p className="text-sm text-gray-600">{booking.services?.map(s => s.service?.name || s.name).join(', ') || 'Service'}</p>
                             <p className="text-sm text-gray-600">
-                              {formatDate(booking.date)} at {formatTime(booking.time)}
+                              {formatDate(booking.scheduledTime)} at {formatTime(booking.scheduledTime)}
                             </p>
                           </div>
                         </div>
@@ -243,7 +243,7 @@ const ProfilePage = () => {
                           <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}>
                             {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                           </span>
-                          <p className="text-sm text-gray-600 mt-1">₹{booking.service.price}</p>
+                          <p className="text-sm text-gray-600 mt-1">₹{booking.totalAmount || 0}</p>
                         </div>
                       </div>
                       

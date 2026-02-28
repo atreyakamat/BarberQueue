@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+import { servicesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const BarberServiceManager = () => {
@@ -33,8 +33,8 @@ const BarberServiceManager = () => {
 
   const fetchServices = async () => {
     try {
-      const response = await api.get(`/services/barber/${user.userId}`);
-      setServices(response.data.services);
+      const response = await servicesAPI.getBarberServices(user.id || user._id);
+      setServices(response.data.services || []);
     } catch (error) {
       toast.error('Error fetching services');
     } finally {
@@ -47,10 +47,10 @@ const BarberServiceManager = () => {
     
     try {
       if (editingService) {
-        await api.put(`/services/${editingService._id}`, formData);
+        await servicesAPI.updateService(editingService._id, formData);
         toast.success('Service updated successfully');
       } else {
-        await api.post('/services', formData);
+        await servicesAPI.createService(formData);
         toast.success('Service added successfully');
       }
       
@@ -76,7 +76,7 @@ const BarberServiceManager = () => {
   const handleDelete = async (serviceId) => {
     if (window.confirm('Are you sure you want to delete this service?')) {
       try {
-        await api.delete(`/services/${serviceId}`);
+        await servicesAPI.deleteService(serviceId);
         toast.success('Service deleted successfully');
         await fetchServices();
       } catch (error) {

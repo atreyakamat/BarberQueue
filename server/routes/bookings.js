@@ -16,9 +16,9 @@ router.get('/stats', auth, authorize('barber'), async (req, res) => {
     const allBookings = await Booking.find({ barber: barberId });
     
     // Today's bookings
-    const today = new Date();
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     
     const todayBookings = await Booking.find({
       barber: barberId,
@@ -53,9 +53,9 @@ router.get('/today', auth, authorize('barber'), async (req, res) => {
   try {
     const barberId = req.user.userId;
     
-    const today = new Date();
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     
     const todayBookings = await Booking.find({
       barber: barberId,

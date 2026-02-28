@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 import { Eye, EyeOff, Phone, Lock, Scissors } from 'lucide-react';
 
 const LoginPage = () => {
@@ -127,12 +128,12 @@ const LoginPage = () => {
             </div>
 
             <div className="text-sm">
-              <Link
-                to="/forgot-password"
-                className="font-medium text-primary-600 hover:text-primary-500"
+              <span
+                className="font-medium text-primary-600 hover:text-primary-500 cursor-pointer"
+                onClick={() => toast('Password reset coming soon! Contact support for help.')}
               >
                 Forgot your password?
-              </Link>
+              </span>
             </div>
           </div>
 
