@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0284c7"/>
+      <stop offset="100%" style="stop-color:#075985"/>
+    </linearGradient>
+  </defs>
+  <rect width="144" height="144" rx="29" fill="url(#bg)"/>
+  <text x="72" y="89.28" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="43" fill="white" dominant-baseline="middle">BQ</text>
+</svg>

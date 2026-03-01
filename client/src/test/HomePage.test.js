@@ -30,7 +30,8 @@ describe('HomePage', () => {
 
     renderHomePage();
     expect(screen.getByText(/Skip the Queue/i)).toBeInTheDocument();
-    expect(screen.getByText(/Book Your Barber/i)).toBeInTheDocument();
+    // The typed-text effect renders dynamically, so check the static part
+    expect(screen.getByText(/India.*#1 Barber Platform/i)).toBeInTheDocument();
   });
 
   it('shows register and login links when not authenticated', () => {
@@ -97,9 +98,9 @@ describe('HomePage', () => {
 
     renderHomePage();
     const heroTitle = screen.getByText(/Skip the Queue/i).closest('h1');
-    // Verify mobile-first responsive classes
-    expect(heroTitle.className).toContain('text-3xl');
-    expect(heroTitle.className).toContain('sm:text-4xl');
-    expect(heroTitle.className).toContain('md:text-6xl');
+    // Verify mobile-first responsive classes (updated for new design)
+    expect(heroTitle.className).toContain('text-4xl');
+    expect(heroTitle.className).toContain('sm:text-5xl');
+    expect(heroTitle.className).toContain('md:text-7xl');
   });
 });

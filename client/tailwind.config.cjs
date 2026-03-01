@@ -60,6 +60,10 @@ module.exports = {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'bounce-in': 'bounceIn 0.6s ease-out',
+        'float': 'float 6s ease-in-out infinite',
+        'pulse-slow': 'pulse 6s ease-in-out infinite',
+        'blink': 'blink 0.8s step-end infinite',
+        'bounce-gentle': 'bounceGentle 0.5s ease-out',
       },
       keyframes: {
         fadeIn: {
@@ -75,6 +79,20 @@ module.exports = {
           '50%': { transform: 'scale(1.05)' },
           '70%': { transform: 'scale(0.9)' },
           '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0) rotate(0deg)', opacity: '0.3' },
+          '33%': { transform: 'translateY(-20px) rotate(5deg)', opacity: '0.6' },
+          '66%': { transform: 'translateY(-10px) rotate(-3deg)', opacity: '0.4' },
+        },
+        blink: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0' },
+        },
+        bounceGentle: {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.15)' },
+          '100%': { transform: 'scale(1)' },
         },
       },
     },
