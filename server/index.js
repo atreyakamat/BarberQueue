@@ -1,9 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const morgan = require('morgan');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 require('dotenv').config();
 
 const db = require('./db');
@@ -26,6 +29,16 @@ const io = new Server(server, {
 
 // Security middleware
 app.use(helmet());
+
+// Compression
+app.use(compression());
+
+// Logging
+if (process.env.NODE_ENV === 'production') {
+  app.use(morgan('combined'));
+} else {
+  app.use(morgan('dev'));
+}
 
 // Rate limiting
 const limiter = rateLimit({
@@ -119,6 +132,20 @@ async function boot() {
     }
   });
 
+  // Serve Frontend in Production
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../client/dist')));
+    
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve(__dirname, '../client/dist', 'index.html'));
+    });
+  } else {
+    // 404 handler for API routes
+    app.use('*', (req, res) => {
+      res.status(404).json({ message: 'Route not found' });
+    });
+  }
+
   // Error handling middleware
   app.use((err, req, res, _next) => {
     console.error(err.stack);
@@ -126,11 +153,6 @@ async function boot() {
       message: 'Something went wrong!',
       error: process.env.NODE_ENV === 'development' ? err.message : {},
     });
-  });
-
-  // 404 handler
-  app.use('*', (req, res) => {
-    res.status(404).json({ message: 'Route not found' });
   });
 
   const PORT = process.env.PORT || 5000;

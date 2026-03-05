@@ -1,17 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { bookingsAPI, usersAPI } from '../services/api';
+import { useQuery, useQueryClient } from 'react-query';
 import toast from 'react-hot-toast';
-import { formatDate, formatTime } from '../utils';
+import { formatDate } from '../utils';
 import BarberDashboard from './BarberDashboard';
 
 const DashboardPage = () => {
   const { user } = useAuth();
   
   if (!user) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
   
   // Show barber dashboard for barbers
@@ -26,70 +31,61 @@ const DashboardPage = () => {
 const CustomerDashboard = () => {
   const { user } = useAuth();
   const { socket } = useSocket();
+  const queryClient = useQueryClient();
   
-  const [recentBookings, setRecentBookings] = useState([]);
-  const [nearbyBarbers, setNearbyBarbers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalBookings: 0,
-    upcomingBookings: 0,
-    completedBookings: 0,
-    cancelledBookings: 0
-  });
+  const { data: bookingsData, isLoading: isLoadingBookings } = useQuery(
+    'my-bookings',
+    () => bookingsAPI.getMyBookings().then(res => res.data.bookings || res.data || []),
+    {
+      onError: () => toast.error('Error fetching bookings')
+    }
+  );
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  const { data: barbersData, isLoading: isLoadingBarbers } = useQuery(
+    'barbers',
+    () => usersAPI.getBarbers().then(res => res.data.barbers || res.data || []),
+    {
+      onError: () => toast.error('Error fetching barbers')
+    }
+  );
 
   useEffect(() => {
     if (socket) {
+      const handleBookingUpdate = (booking) => {
+        if (booking.customer?._id === user.id || booking.customer === user.id) {
+          queryClient.invalidateQueries('my-bookings');
+        }
+      };
+
+      const handleQueueUpdate = (data) => {
+        if (data.userId === user.id) {
+          toast.success(`Queue position update: ${data.position}`);
+          queryClient.invalidateQueries('my-bookings');
+        }
+      };
+
       socket.on('booking-updated', handleBookingUpdate);
       socket.on('queue-updated', handleQueueUpdate);
       
       return () => {
-        socket.off('booking-updated');
-        socket.off('queue-updated');
+        socket.off('booking-updated', handleBookingUpdate);
+        socket.off('queue-updated', handleQueueUpdate);
       };
     }
-  }, [socket]);
+  }, [socket, user.id, queryClient]);
 
-  const fetchDashboardData = async () => {
-    try {
-      const [bookingsResponse, barbersResponse] = await Promise.all([
-        bookingsAPI.getMyBookings(),
-        usersAPI.getBarbers()
-      ]);
-
-      const bookings = bookingsResponse.data.bookings || bookingsResponse.data || [];
-      const barbers = barbersResponse.data.barbers || barbersResponse.data || [];
-
-      setRecentBookings(bookings.slice(0, 5));
-      setNearbyBarbers(barbers.slice(0, 4));
-      
-      // Calculate stats
-      setStats({
-        totalBookings: bookings.length,
-        upcomingBookings: bookings.filter(b => b.status === 'confirmed' && new Date(b.scheduledTime) > new Date()).length,
-        completedBookings: bookings.filter(b => b.status === 'completed').length,
-        cancelledBookings: bookings.filter(b => b.status === 'cancelled').length
-      });
-    } catch (error) {
-      toast.error('Error fetching dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBookingUpdate = (booking) => {
-    if (booking.customer._id === user.id || booking.customer === user.id) {
-      fetchDashboardData();
-    }
-  };
-
-  const handleQueueUpdate = (data) => {
-    if (data.userId === user.id) {
-      toast.success(`Queue position update: ${data.position}`);
-    }
+  const loading = isLoadingBookings || isLoadingBarbers;
+  const recentBookings = (bookingsData || []).slice(0, 5);
+  const nearbyBarbers = (barbersData || []).slice(0, 4);
+  
+  // Calculate stats
+  const stats = {
+    totalBookings: (bookingsData || []).length,
+    upcomingBookings: (bookingsData || []).filter(b => 
+      (b.status === 'confirmed' || b.status === 'pending') && new Date(b.scheduledTime) > new Date()
+    ).length,
+    completedBookings: (bookingsData || []).filter(b => b.status === 'completed').length,
+    cancelledBookings: (bookingsData || []).filter(b => b.status === 'cancelled').length
   };
 
   const getStatusColor = (status) => {
@@ -105,17 +101,6 @@ const CustomerDashboard = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const getTimeStatus = (date, time) => {
-    const appointmentTime = new Date(`${date}T${time}`);
-    const now = new Date();
-    const diffHours = (appointmentTime - now) / (1000 * 60 * 60);
-    
-    if (diffHours < 0) return 'Past';
-    if (diffHours < 24) return 'Today';
-    if (diffHours < 48) return 'Tomorrow';
-    return 'Upcoming';
   };
 
   if (loading) {

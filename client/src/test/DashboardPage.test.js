@@ -53,8 +53,8 @@ describe('DashboardPage', () => {
       loading: false,
     });
 
-    render(<DashboardPage />, { wrapper: createWrapper() });
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    const { container } = render(<DashboardPage />, { wrapper: createWrapper() });
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
   it('shows customer dashboard for customer role', async () => {
