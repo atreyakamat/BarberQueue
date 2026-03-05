@@ -14,7 +14,9 @@ const jwt = require('jsonwebtoken');
 
 // Force test environment
 process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test-jwt-secret-for-barberqueue';
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'test-jwt-secret-for-barberqueue';
+}
 
 let db;
 
