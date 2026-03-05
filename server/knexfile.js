@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 module.exports = {
   development: {
@@ -17,11 +18,11 @@ module.exports = {
       idleTimeoutMillis: 30000,
     },
     migrations: {
-      directory: './migrations',
+      directory: path.join(__dirname, 'migrations'),
       tableName: 'knex_migrations',
     },
     seeds: {
-      directory: './seeds',
+      directory: path.join(__dirname, 'seeds'),
     },
   },
 
@@ -39,11 +40,11 @@ module.exports = {
       max: 10,
     },
     migrations: {
-      directory: './migrations',
+      directory: path.join(__dirname, 'migrations'),
       tableName: 'knex_migrations',
     },
     seeds: {
-      directory: './seeds',
+      directory: path.join(__dirname, 'seeds'),
     },
   },
 
@@ -64,11 +65,11 @@ module.exports = {
       idleTimeoutMillis: 30000,
     },
     migrations: {
-      directory: './migrations',
+      directory: path.join(__dirname, 'migrations'),
       tableName: 'knex_migrations',
     },
     seeds: {
-      directory: './seeds',
+      directory: path.join(__dirname, 'seeds'),
     },
   },
 };
