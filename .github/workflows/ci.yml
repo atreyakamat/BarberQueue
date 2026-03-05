@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Job for Frontend
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./client
+        run: npm ci
+
+      - name: Run Lint
+        working-directory: ./client
+        run: npm run lint
+
+      - name: Run Tests
+        working-directory: ./client
+        run: npm test
+
+      - name: Build
+        working-directory: ./client
+        run: npm run build
+
+  # Job for Backend
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: barberqueue_test
+          POSTGRES_PASSWORD: postgres_test_password
+        ports:
+          - 5432:5432
+        # Wait for postgres to be ready
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Run Backend Tests
+        working-directory: ./server
+        env:
+          NODE_ENV: test
+          PG_HOST: localhost
+          PG_PORT: 5432
+          PG_DATABASE: barberqueue_test
+          PG_USER: postgres
+          PG_PASSWORD: postgres_test_password
+          JWT_SECRET: test-secret-key-for-ci
+        run: npm test
